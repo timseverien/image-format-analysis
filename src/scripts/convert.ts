@@ -6,6 +6,7 @@ import { DIR_IMAGES, IMAGE_FORMAT_LIST, IMAGE_QUALITY_LIST } from '../config';
 import { getImageFileMap, getSourceImageFiles } from '../image';
 
 const sourceImageFiles = await getSourceImageFiles();
+const imageFileMap = await getImageFileMap(sourceImageFiles);
 
 const bar = new ProgressBar(
 	'converting [:bar] :current/:total (:percent) :etas',
@@ -16,8 +17,6 @@ const bar = new ProgressBar(
 			sourceImageFiles.length,
 	}
 );
-
-const imageFileMap = await getImageFileMap(sourceImageFiles);
 
 for (const { source, images } of imageFileMap) {
 	const sourceImageFilePath = path.resolve(DIR_IMAGES, source.fileName);

@@ -16,6 +16,6 @@ export const IMAGE_FORMAT_LIST: CompressedImageFormat[] = [
 	'webp',
 ];
 
-export const IMAGE_QUALITY_LIST = range(10, 100, 10);
+export const IMAGE_QUALITY_LIST = range(10, 101, 10);
 
 export const IMAGE_RESOLUTION_LIST: ImageResolution[] = [[1024, 1024]];

@@ -207,7 +207,7 @@ export function getPeakSignalToNoiseRatio(
 	image2: Uint8ClampedArray
 ): number {
 	const mse = getMeanSquaredError(image1, image2);
-	return 10 * Math.log10(255 ** 2 / mse);
+	return mse > 0 ? 10 * Math.log10(255 ** 2 / mse) : 0;
 }
 
 function imageDataWithoutAlpha(data: Uint8ClampedArray) {

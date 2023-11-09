@@ -153,6 +153,7 @@ for (const [index, pictureUrl] of PICTURE_URLS.entries()) {
 
 	if (!response.ok) {
 		bar.interrupt(`Unable to fetch ${pictureUrl}`);
+		bar.tick();
 		continue;
 	}
 

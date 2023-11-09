@@ -61,6 +61,14 @@ for (const { source, images } of imageFileMap) {
 			convertedImageFile.fileName
 		);
 
+		if (results.compressed[convertedImageFile.fileName]) {
+			bar.interrupt(
+				`Skipping ${convertedImageFile.fileName} because it’s already analyzed`
+			);
+			bar.tick();
+			continue;
+		}
+
 		const imageConvertedData = new Uint8ClampedArray(
 			await sharp(convertedImageFilePath).raw().toBuffer()
 		);
@@ -73,7 +81,6 @@ for (const { source, images } of imageFileMap) {
 		};
 
 		await fs.writeJson(FILE_RESULT, results);
-
 		bar.tick();
 	}
 }

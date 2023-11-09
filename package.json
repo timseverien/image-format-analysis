@@ -1,6 +1,7 @@
 {
 	"private": true,
 	"scripts": {
+		"analyze": "vite-node src/scripts/analyze",
 		"download": "vite-node src/scripts/download",
 		"convert": "vite-node src/scripts/convert"
 	},
@@ -9,6 +10,7 @@
 		"lodash": "^4.17.21",
 		"progress": "^2.0.3",
 		"sharp": "^0.32.6",
+		"ssim": "^0.0.0",
 		"vite-node": "^0.34.6"
 	},
 	"devDependencies": {

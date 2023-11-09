@@ -1,5 +1,6 @@
 import fs from 'fs-extra';
 import * as path from 'node:path';
+import ssim from 'ssim';
 import {
 	DIR_IMAGES,
 	IMAGE_FORMAT_LIST,
@@ -180,4 +181,45 @@ export function parseSourceImageFileName(
 		name: name,
 		resolution: parseResolution(resolution),
 	};
+}
+
+export function getMeanSquaredError(
+	image1: Uint8ClampedArray,
+	image2: Uint8ClampedArray
+): number {
+	if (image1.length !== image2.length) {
+		throw new Error('Images are different in size');
+	}
+
+	let errorSum = 0;
+
+	for (let i = 0; i < image1.length; i++) {
+		// Skip alpha channel
+		if (i > 0 && i % 4 === 0) continue;
+		errorSum += (image1[i] - image2[i]) ** 2;
+	}
+
+	return errorSum / image1.length / 3;
+}
+
+export function getPeakSignalToNoiseRatio(
+	image1: Uint8ClampedArray,
+	image2: Uint8ClampedArray
+): number {
+	const mse = getMeanSquaredError(image1, image2);
+	return 10 * Math.log10(255 ** 2 / mse);
+}
+
+function imageDataWithoutAlpha(data: Uint8ClampedArray) {
+	return data.filter((v, i) => i > 0 && i % 4 !== 0);
+}
+
+export function getStructuralSimilarity(
+	image1: Uint8ClampedArray,
+	image2: Uint8ClampedArray
+): number {
+	return ssim(
+		Array.from(imageDataWithoutAlpha(image1)),
+		Array.from(imageDataWithoutAlpha(image2))
+	);
 }

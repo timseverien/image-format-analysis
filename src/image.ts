@@ -1,6 +1,13 @@
-import { IMAGE_FORMAT_LIST } from './config';
+import fs from 'fs-extra';
+import * as path from 'node:path';
+import {
+	DIR_IMAGES,
+	IMAGE_FORMAT_LIST,
+	IMAGE_QUALITY_LIST,
+	IMAGE_RESOLUTION_LIST,
+} from './config';
 
-export type ConvertedImageFormat = 'avif' | 'jpeg' | 'webp';
+export type CompressedImageFormat = 'avif' | 'jpeg' | 'webp';
 
 export type ImageResolution = [number, number];
 
@@ -12,16 +19,16 @@ export type SourceImageFileInfo = {
 	resolution: ImageResolution;
 };
 
-export type ConvertedImageFileInfo = {
+export type CompressedImageFileInfo = {
 	name: string;
-	format: ConvertedImageFormat;
+	format: CompressedImageFormat;
 	fileName: string;
 	fileSize: number;
 	resolution: ImageResolution;
 	quality: number;
 };
 
-export type ConvertedImageFileResult = ConvertedImageFileInfo & {
+export type CompressedImageFileResult = CompressedImageFileInfo & {
 	result: {
 		mse: number;
 		psnr: number;
@@ -29,12 +36,17 @@ export type ConvertedImageFileResult = ConvertedImageFileInfo & {
 	};
 };
 
-export function createConvertedImageFileInfo(
-	data: Omit<ConvertedImageFileInfo, 'fileName'>
-): ConvertedImageFileInfo {
+export type ImageFileMap = {
+	source: SourceImageFileInfo;
+	images: CompressedImageFileInfo[];
+}[];
+
+export function createCompressedImageFileInfo(
+	data: Omit<CompressedImageFileInfo, 'fileName'>
+): CompressedImageFileInfo {
 	return {
 		...data,
-		fileName: getFileNameFromConvertedImageFile(data),
+		fileName: getFileNameFromCompressedImageFile(data),
 	};
 }
 
@@ -47,21 +59,78 @@ export function createSourceImageFileInfo(
 	};
 }
 
-export function getFileNameFromConvertedImageFile(
-	convertedImageFile: Omit<ConvertedImageFileInfo, 'fileName'>
+export async function getSourceImageFiles(): Promise<SourceImageFileInfo[]> {
+	const files = (await fs.readdir(DIR_IMAGES)).filter((f) =>
+		f.endsWith('.png')
+	);
+
+	return files.map((file) => parseSourceImageFileName(file));
+}
+
+export function getFileNameFromCompressedImageFile(
+	compressedImageFile: Omit<CompressedImageFileInfo, 'fileName'>
 ): string {
-	const [width, height] = convertedImageFile.resolution;
-	return `${convertedImageFile.name}-${width}x${height}-${convertedImageFile.quality}.${convertedImageFile.format}`;
+	const [width, height] = compressedImageFile.resolution;
+	return `${compressedImageFile.name}-${width}x${height}-${compressedImageFile.quality}.${compressedImageFile.format}`;
 }
 
 export function getFileNameFromSourceImageFile(
-	convertedImageFile: Omit<SourceImageFileInfo, 'fileName'>
+	compressedImageFile: Omit<SourceImageFileInfo, 'fileName'>
 ): string {
-	const [width, height] = convertedImageFile.resolution;
-	return `${convertedImageFile.name}-${width}x${height}.${convertedImageFile.format}`;
+	const [width, height] = compressedImageFile.resolution;
+	return `${compressedImageFile.name}-${width}x${height}.${compressedImageFile.format}`;
 }
 
-export function isFileFormat(format: string): format is ConvertedImageFormat {
+export async function getImageFileSize(
+	file: SourceImageFileInfo | CompressedImageFileInfo
+) {
+	const imagePath = path.resolve(DIR_IMAGES, file.fileName);
+	const imageStat = await fs.stat(imagePath);
+	return imageStat.size;
+}
+
+export async function getImageFileMap(
+	sourceImageFiles: SourceImageFileInfo[],
+	formatList: CompressedImageFormat[] = IMAGE_FORMAT_LIST,
+	resolutionList: ImageResolution[] = IMAGE_RESOLUTION_LIST,
+	qualityList: number[] = IMAGE_QUALITY_LIST
+): Promise<ImageFileMap> {
+	return Promise.all(
+		sourceImageFiles.map(async (sourceImage) => {
+			const images: CompressedImageFileInfo[] = [];
+
+			for (const format of formatList) {
+				for (const resolution of resolutionList) {
+					for (const quality of qualityList) {
+						const image = createCompressedImageFileInfo({
+							format,
+							quality,
+							resolution,
+							fileSize: 0,
+							name: sourceImage.name,
+						});
+
+						try {
+							image.fileSize = await getImageFileSize(image);
+						} catch {}
+
+						images.push(image);
+					}
+				}
+			}
+
+			return {
+				source: {
+					...sourceImage,
+					fileSize: await getImageFileSize(sourceImage),
+				},
+				images,
+			};
+		})
+	);
+}
+
+export function isFileFormat(format: string): format is CompressedImageFormat {
 	return (IMAGE_FORMAT_LIST as string[]).includes(format);
 }
 
@@ -71,9 +140,9 @@ export function parseResolution(resolution: string): ImageResolution {
 	return [Number.parseInt(x), Number.parseInt(y)];
 }
 
-export function parseConvertedImageFileName(
+export function parseCompressedImageFileName(
 	fileName: string
-): ConvertedImageFileInfo {
+): CompressedImageFileInfo {
 	const {
 		name = 'unknown',
 		resolution = '0x0',

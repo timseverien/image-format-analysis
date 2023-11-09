@@ -137,9 +137,12 @@ const IMAGE_URL_PARAMETERS = new URLSearchParams([
 
 await ensureDir(DIR_IMAGES);
 
-const bar = new ProgressBar(':bar :percent :etas', {
-	total: PICTURE_URLS.length,
-});
+const bar = new ProgressBar(
+	'downloading [:bar] :current/:total (:percent) :etas',
+	{
+		total: PICTURE_URLS.length,
+	}
+);
 
 for (const [index, pictureUrl] of PICTURE_URLS.entries()) {
 	const pictureUrlWithParams = new URL(
@@ -185,3 +188,5 @@ for (const [index, pictureUrl] of PICTURE_URLS.entries()) {
 
 	bar.tick();
 }
+
+bar.terminate();

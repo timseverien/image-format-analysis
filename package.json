@@ -1,7 +1,8 @@
 {
 	"private": true,
 	"scripts": {
-		"download": "vite-node src/scripts/download"
+		"download": "vite-node src/scripts/download",
+		"convert": "vite-node src/scripts/convert"
 	},
 	"dependencies": {
 		"fs-extra": "^11.1.1",

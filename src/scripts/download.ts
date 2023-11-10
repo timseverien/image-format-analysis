@@ -2,8 +2,7 @@ import { ensureDir, pathExists } from 'fs-extra';
 import * as path from 'node:path';
 import ProgressBar from 'progress';
 import sharp from 'sharp';
-import { DIR_IMAGES, IMAGE_RESOLUTION_LIST } from '../config';
-import { createSourceImageFileInfo } from '../image';
+import { DIR_IMAGES_SOURCE, IMAGE_RESOLUTION_LIST } from '../config';
 
 // Sourced from: https://awards.unsplash.com/2022/
 const PICTURE_URLS = [
@@ -135,7 +134,7 @@ const IMAGE_URL_PARAMETERS = new URLSearchParams([
 	['w', IMAGE_RESOLUTION_LIST.reduce((m, [w]) => Math.max(m, w), 0).toString()],
 ]);
 
-await ensureDir(DIR_IMAGES);
+await ensureDir(DIR_IMAGES_SOURCE);
 
 const bar = new ProgressBar(
 	'downloading [:bar] :current/:total (:percent) :etas',
@@ -162,30 +161,13 @@ for (const [index, pictureUrl] of PICTURE_URLS.entries()) {
 		quality: 100,
 	});
 
-	for (const resolution of IMAGE_RESOLUTION_LIST) {
-		const imageSourceFile = createSourceImageFileInfo({
-			fileSize: 0,
-			format: 'png',
-			name: index.toString(),
-			resolution,
-		});
+	const imageSourceFilePath = path.resolve(DIR_IMAGES_SOURCE, `${index}.png`);
 
-		const imageSourceFilePath = path.resolve(
-			DIR_IMAGES,
-			imageSourceFile.fileName
-		);
-
-		if (await pathExists(imageSourceFilePath)) {
-			continue;
-		}
-
-		await image
-			.resize({
-				height: imageSourceFile.resolution[1],
-				width: imageSourceFile.resolution[0],
-			})
-			.toFile(imageSourceFilePath);
+	if (await pathExists(imageSourceFilePath)) {
+		continue;
 	}
+
+	await image.toFile(imageSourceFilePath);
 
 	bar.tick();
 }
